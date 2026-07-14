@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth_routes import router as auth_router
 from app.api.tracks_routes import router as tracks_router
+from app.api.papers_routes import router as papers_router
 
 app = FastAPI(title="Paperpath API", version="0.1.0")
 
@@ -15,6 +16,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(tracks_router)
+app.include_router(papers_router)
 
 
 @app.get("/health")
