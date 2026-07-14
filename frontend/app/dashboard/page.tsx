@@ -2,17 +2,42 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
+import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import Link from "next/link";
+
+interface TrackInfo {
+  id: string;
+  domain: string;
+  name: string;
+  paper_count: number;
+}
+
+const TRACK_META: Record<string, { desc: string; color: string }> = {
+  beginner: {
+    desc: "Foundational papers: Word2Vec, ResNet, Transformers, GANs",
+    color: "border-green-500",
+  },
+  intermediate: {
+    desc: "Core ML/AI: BERT, GPT-3, CLIP, LoRA, Diffusion Models",
+    color: "border-yellow-500",
+  },
+  pro: {
+    desc: "Advanced: RLHF, DPO, Flash Attention, Mamba, LLaMA",
+    color: "border-red-500",
+  },
+};
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [tracks, setTracks] = useState<TrackInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
-    async function getUser() {
+    async function load() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -21,9 +46,15 @@ export default function DashboardPage() {
         return;
       }
       setUser(user);
+      try {
+        const data = await apiFetch("/tracks");
+        setTracks(data);
+      } catch {
+        // Tracks endpoint doesn't require auth
+      }
       setLoading(false);
     }
-    getUser();
+    load();
   }, []);
 
   async function handleLogout() {
@@ -44,6 +75,12 @@ export default function DashboardPage() {
       <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Paperpath</h1>
         <div className="flex items-center gap-4">
+          <Link
+            href={`/profile/${user?.email?.split("@")[0] || ""}`}
+            className="text-sm text-gray-400 hover:text-white transition"
+          >
+            Profile
+          </Link>
           <span className="text-sm text-gray-400">{user?.email}</span>
           <button
             onClick={handleLogout}
@@ -60,35 +97,25 @@ export default function DashboardPage() {
           papers.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              name: "Beginner",
-              desc: "Foundational papers: Word2Vec, ResNet, Transformers, GANs",
-              papers: 7,
-              color: "border-green-500",
-            },
-            {
-              name: "Intermediate",
-              desc: "Core ML/AI: BERT, GPT-3, CLIP, LoRA, Diffusion Models",
-              papers: 10,
-              color: "border-yellow-500",
-            },
-            {
-              name: "Pro",
-              desc: "Advanced: RLHF, DPO, Flash Attention, Mamba, LLaMA",
-              papers: 8,
-              color: "border-red-500",
-            },
-          ].map((track) => (
-            <div
-              key={track.name}
-              className={`rounded-xl border-2 ${track.color} bg-gray-900 p-6 hover:bg-gray-800 transition cursor-pointer`}
-            >
-              <h3 className="text-lg font-semibold mb-2">{track.name}</h3>
-              <p className="text-sm text-gray-400 mb-4">{track.desc}</p>
-              <p className="text-sm text-gray-500">{track.papers} papers</p>
-            </div>
-          ))}
+          {tracks.map((track) => {
+            const meta = TRACK_META[track.name.toLowerCase()] || {
+              desc: "",
+              color: "border-gray-500",
+            };
+            return (
+              <Link
+                key={track.id}
+                href={`/track/${track.id}`}
+                className={`rounded-xl border-2 ${meta.color} bg-gray-900 p-6 hover:bg-gray-800 transition`}
+              >
+                <h3 className="text-lg font-semibold mb-2">{track.name}</h3>
+                <p className="text-sm text-gray-400 mb-4">{meta.desc}</p>
+                <p className="text-sm text-gray-500">
+                  {track.paper_count} papers
+                </p>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </main>
