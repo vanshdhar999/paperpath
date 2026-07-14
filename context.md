@@ -12,6 +12,13 @@
 - Backend: FastAPI health endpoint running on :8000
 - Next: Brick 2 — paper ingestion pipeline (arXiv fetch → PDF parse → embeddings)
 
+### Brick 2: Paper Ingestion Pipeline ✓
+- Pipeline: arXiv API → PDF download → PyMuPDF text extraction → sentence-transformer embeddings
+- Services: arxiv_service, pdf_service, embedding_service, ingestion_service
+- All 25 papers ingested with full_text and 384-dim embeddings
+- CLI: `cd backend && .venv/bin/python -m scripts.ingest`
+- Next: Brick 3 — Auth (Supabase magic link) + dashboard shell
+
 ### API Keys configured
 - ANTHROPIC_API_KEY — for paper journey restructuring and quiz generation
 - SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY — Supabase project
