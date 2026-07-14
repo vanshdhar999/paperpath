@@ -14,6 +14,18 @@ interface TrackInfo {
   paper_count: number;
 }
 
+interface Suggestion {
+  id: string;
+  arxiv_id: string;
+  title: string;
+  authors: string[];
+  abstract: string;
+  difficulty_tier: string;
+  venue: string;
+  similarity: number;
+  reason: string;
+}
+
 const TRACK_META: Record<string, { desc: string; color: string }> = {
   beginner: {
     desc: "Foundational papers: Word2Vec, ResNet, Transformers, GANs",
@@ -32,6 +44,7 @@ const TRACK_META: Record<string, { desc: string; color: string }> = {
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [tracks, setTracks] = useState<TrackInfo[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
   const router = useRouter();
@@ -51,6 +64,12 @@ export default function DashboardPage() {
         setTracks(data);
       } catch {
         // Tracks endpoint doesn't require auth
+      }
+      try {
+        const sug = await apiFetch("/suggestions");
+        setSuggestions(sug);
+      } catch {
+        // Suggestions may fail if no auth
       }
       setLoading(false);
     }
@@ -117,6 +136,55 @@ export default function DashboardPage() {
             );
           })}
         </div>
+
+        {/* Suggestions */}
+        {suggestions.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-2">Suggested for you</h2>
+            <p className="text-gray-400 mb-6">
+              Papers similar to ones you&apos;ve completed.
+            </p>
+            <div className="space-y-3">
+              {suggestions.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/paper/${s.id}`}
+                  className="block rounded-lg bg-gray-900 border border-gray-800 px-5 py-4 hover:bg-gray-800 transition"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium">{s.title}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {s.authors?.slice(0, 3).join(", ")}
+                        {s.authors?.length > 3 && " et al."}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">{s.abstract}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`text-xs font-medium ${
+                          s.difficulty_tier === "beginner"
+                            ? "text-green-400"
+                            : s.difficulty_tier === "intermediate"
+                            ? "text-yellow-400"
+                            : "text-red-400"
+                        }`}
+                      >
+                        {s.difficulty_tier}
+                      </span>
+                      {s.similarity > 0 && (
+                        <p className="text-xs text-gray-600 mt-1">
+                          {Math.round(s.similarity * 100)}% match
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">{s.reason}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
