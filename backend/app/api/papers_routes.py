@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.db.models import Paper, UserProgress, Prerequisite, Quiz, User
 from app.auth import get_current_user
-from app.services.claude_service import restructure_paper, generate_quiz
+from app.services.llm_service import restructure_paper, generate_quiz
 
 router = APIRouter(prefix="/papers", tags=["papers"])
 
